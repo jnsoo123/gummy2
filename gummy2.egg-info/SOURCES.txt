@@ -1,0 +1,8 @@
+MANIFEST.in
+gummy2/__init__.py
+gummy2/gummy2.py
+gummy2.egg-info/PKG-INFO
+gummy2.egg-info/SOURCES.txt
+gummy2.egg-info/dependency_links.txt
+gummy2.egg-info/requires.txt
+gummy2.egg-info/top_level.txt
