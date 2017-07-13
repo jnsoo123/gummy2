@@ -1,39 +1,70 @@
 {% extends 'layout.html' %}
 {% block body %}
+
+<script type='text/javascript'>
+$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+
+$(function(){
+  var translateToJapaneseButton = $('#translateToJapanese');
+  var translateToEnglishButton = $('#translateToEnglish');
+
+  translateToJapaneseButton.bind('click', function(){
+    translateToJapaneseButton.text('Translating to Japanese...')
+
+    $.getJSON($SCRIPT_ROOT + '/_ja_translate', {
+      text: $('#textTranslateToJapanese').val()
+    }, function(data){
+      $('#textTranslateToEnglish').val(data);
+      translateToJapaneseButton.text('Translate to Japanese!');
+    });
+    return false
+  });
+
+  translateToEnglishButton.bind('click', function(){
+    translateToEnglishButton.text('Translating to English...');
+
+    $.getJSON($SCRIPT_ROOT + '/_en_translate', {
+      text: $('#textTranslateToEnglish').val()
+    }, function(data){
+      $('#textTranslateToJapanese').val(decodeURIComponent(data));
+      translateToEnglishButton.text('Translate to English!')
+    });
+  });
+});
+</script>
+
 <div class="container main-container">
   <a href="/">
     <h1 class="text-center">
       Gummy: Translate Me!
     </h1>
   </a>
-  <hr />
+  <br />
   <div class="row">
-    <div class="col-xs-6">
+    <div class="col-sm-6 col-xs-12">
       <h3 class="text-center">Translate to Japanese</h3>
-      <form action='/ja_translate' method='POST'>
-        <div class="form-group">
-          <textarea class='form-control' placeholder='Eg. Hello World' name='text_translate'>{{ translated_en_text }}</textarea>
-        </div>
-        <div class="form-group">
-          <input type='submit' value='Go!' class='btn btn-primary' />
-        </div>
-      </form>
+      <div class="form-group">
+        <textarea class='form-control' placeholder='Eg. Hello World' id='textTranslateToJapanese' required >{{ translated_en_text }}</textarea>
+      </div>
+      <div class="form-group text-center">
+        <button type='button' class='btn btn-default' id='translateToJapanese'>Translate to Japanese!</button>
+        <button type='button' class='btn btn-default'>Record</button>
+      </div>
     </div>
-    <div class="col-xs-6">
+    <div class="col-sm-6 col-xs-12">
       <h3 class="text-center">Translate to English</h3>
-      <form action='/en_translate' method='POST'>
-        <div class="form-group">
-          <textarea class='form-control' placeholder='Eg. Hello World' name='text_translate'>{{ translated_ja_text }}</textarea>
-        </div>
-        <div class="form-group">
-          <input type='submit' value='Go!' class='btn btn-primary' />
-        </div>
-      </form>
+      <div class="form-group">
+        <textarea class='form-control' placeholder='Eg. こんにちは、世界。' id='textTranslateToEnglish' required >{{ translated_ja_text }}</textarea>
+      </div>
+      <div class="form-group text-center">
+        <button type='button' class='btn btn-default' id='translateToEnglish'>Translate to English!</button>
+        <button type='button' class='btn btn-default'>Record</button>
+      </div>
     </div>
   </div>
-  {% if translated_text %}
-  {{ translated_text }}
-  {% endif %}
+</div>
+{% if translated_text %}
+{{ translated_text }}
+{% endif %}
 </div>
 {% endblock %}
-
