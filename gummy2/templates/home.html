@@ -7,29 +7,88 @@ $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 $(function(){
   var translateToJapaneseButton = $('#translateToJapanese');
   var translateToEnglishButton = $('#translateToEnglish');
+  var recordToJapaneseButton = $('#recordToJapanese');
+  var chunks = [];
 
-  translateToJapaneseButton.bind('click', function(){
-    translateToJapaneseButton.text('Translating to Japanese...')
+  //initialization
 
-    $.getJSON($SCRIPT_ROOT + '/_ja_translate', {
-      text: $('#textTranslateToJapanese').val()
-    }, function(data){
-      $('#textTranslateToEnglish').val(data);
-      translateToJapaneseButton.text('Translate to Japanese!');
-    });
-    return false
-  });
+  navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+  if (navigator.getUserMedia) {
+    console.log('getUserMedia supported');
+    navigator.getUserMedia(
+        {
+          audio: true
+        },
+        function(stream){
+          console.log('successful callback');
+          var mediaRecorder = new MediaRecorder(stream);
 
-  translateToEnglishButton.bind('click', function(){
-    translateToEnglishButton.text('Translating to English...');
+          mediaRecorder.ondataavailable = function(e){
+            chunks.push(e.data);
+          }
 
-    $.getJSON($SCRIPT_ROOT + '/_en_translate', {
-      text: $('#textTranslateToEnglish').val()
-    }, function(data){
-      $('#textTranslateToJapanese').val(decodeURIComponent(data));
-      translateToEnglishButton.text('Translate to English!')
-    });
-  });
+          mediaRecorder.onstop = function(e){
+            recordToJapaneseButton.html('Translating voice...')
+            console.log('recorder stopped');
+            var blob = new Blob(chunks, { 'type': 'audio/ogg;codecs=opus' });
+            var form = new FormData();
+            form.append('file', blob);
+            $.ajax({
+              type: 'POST',
+              url: $SCRIPT_ROOT + '/_translate_en_record',
+              data: form,
+              processData: false,
+              contentType: false
+            }).done(function(data){
+              console.log(data);
+              recordToJapaneseButton.html('Record');
+              if(data != 'Unable to understand'){
+                $('#textTranslateToJapanese').val(data);
+                translateToJapaneseButton.click();
+              }
+            });
+            chunks = [];
+          }
+
+          translateToJapaneseButton.bind('click', function(){
+            translateToJapaneseButton.text('Translating to Japanese...')
+
+              $.getJSON($SCRIPT_ROOT + '/_ja_translate', {
+                text: $('#textTranslateToJapanese').val() }, function(data){
+                  $('#textTranslateToEnglish').val(data);
+                  translateToJapaneseButton.text('Translate to Japanese!');
+                });
+            return false
+          });
+
+          translateToEnglishButton.bind('click', function(){
+            translateToEnglishButton.text('Translating to English...');
+
+            $.getJSON($SCRIPT_ROOT + '/_en_translate', {
+              text: $('#textTranslateToEnglish').val()
+            }, function(data){
+              $('#textTranslateToJapanese').val(decodeURIComponent(data));
+              translateToEnglishButton.text('Translate to English!')
+            });
+          });
+
+          recordToJapaneseButton.on('mousedown', function(){
+            recordToJapaneseButton.html('Recording...');
+            mediaRecorder.start();
+            console.log(mediaRecorder.state);
+            console.log('Recorder Started');
+          }).on('mouseup mouseleave', function(){
+            mediaRecorder.stop();
+            console.log(mediaRecorder.state);
+            console.log('Recorder stopped');
+            recordToJapaneseButton.html('Record');
+          });
+        },
+        function(err){
+          console.log('failure callback');
+        }
+    )
+  }
 });
 </script>
 
@@ -48,7 +107,7 @@ $(function(){
       </div>
       <div class="form-group text-center">
         <button type='button' class='btn btn-default' id='translateToJapanese'>Translate to Japanese!</button>
-        <button type='button' class='btn btn-default'>Record</button>
+        <button type='button' class='btn btn-default' id='recordToJapanese'>Record</button>
       </div>
     </div>
     <div class="col-sm-6 col-xs-12">
