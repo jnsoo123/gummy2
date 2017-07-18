@@ -15,6 +15,7 @@ app.config.from_object(__name__)
 
 @app.route('/')
 def home():
+#    remove_files()
     return render_template('home.html')
 
 @app.route('/_ja_translate', methods=['GET'])
@@ -39,9 +40,11 @@ def en_translate():
     save_speech_mp3_files(urllib.unquote(translated_text), text)
     return jsonify(translated_text)
 
-@app.route('/_translate_en_record', methods=['POST'])
-def translate_en_record():
+@app.route('/_record_voice', methods=['POST'])
+def record_voice():
     remove_files()
+
+    lang = request.form.get('language')
 
     f = open('speech.ogg', 'wb')
     f.write(request.files['file'].read())
@@ -64,18 +67,22 @@ def translate_en_record():
         audio = r.record(source)
     
     try:
-        text = r.recognize_google(audio)
+        text = r.recognize_google(audio, language=str(lang))
     except Exception:
         text = 'Unable to understand'
     finally:
+        print 'language: ' + lang
         print 'text: ' + text
         return jsonify(text)
 
 def save_speech_mp3_files(en_text, ja_text):
+    UPLOAD_FOLDER = os.path.dirname(os.path.abspath(__file__))
+    print UPLOAD_FOLDER
+
     tts_en = gTTS(text=en_text, lang='en')
-    tts_en.save('en_speech.mp3')
+    tts_en.save(os.path.join(UPLOAD_FOLDER, 'static', 'en_speech.mp3'))
     tts_ja = gTTS(text=ja_text.encode('utf-8'), lang='ja')
-    tts_ja.save('ja_speech.mp3')
+    tts_ja.save(os.path.join(UPLOAD_FOLDER, 'static', 'ja_speech.mp3'))
 
 def remove_files():
     array_files = ['speech.ogg', 'speech.wav', 'en_speech.mp3', 'ja_speech.mp3']

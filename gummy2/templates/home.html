@@ -6,11 +6,16 @@ $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
 $(function(){
   var translateToJapaneseButton = $('#translateToJapanese');
-  var translateToEnglishButton = $('#translateToEnglish');
-  var recordToJapaneseButton = $('#recordToJapanese');
+  var translateToEnglishButton  = $('#translateToEnglish');
+  var recordToJapaneseButton    = $('#recordToJapanese');
+  var recordToEnglishButton     = $('#recordToEnglish');
+  var alert                     = $('#unableToUnderstandAlert');
+  var currentRecorder = '';
   var chunks = [];
 
   //initialization
+
+  alert.hide();
 
   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
   if (navigator.getUserMedia) {
@@ -27,24 +32,41 @@ $(function(){
             chunks.push(e.data);
           }
 
-          mediaRecorder.onstop = function(e){
-            recordToJapaneseButton.html('Translating voice...')
+          mediaRecorder.onstop = function(e, a){
+            console.log(a);
+            if (currentRecorder == 'en-US') {
+              recordToJapaneseButton.html('Translating voice...')
+            } else {
+              recordToEnglishButton.html('Translating voice...')
+            }
             console.log('recorder stopped');
             var blob = new Blob(chunks, { 'type': 'audio/ogg;codecs=opus' });
             var form = new FormData();
             form.append('file', blob);
+            form.append('language', currentRecorder)
             $.ajax({
               type: 'POST',
-              url: $SCRIPT_ROOT + '/_translate_en_record',
+              url: $SCRIPT_ROOT + '/_record_voice',
               data: form,
               processData: false,
               contentType: false
             }).done(function(data){
               console.log(data);
-              recordToJapaneseButton.html('Record');
+              if (currentRecorder == 'en-US') {
+                recordToJapaneseButton.html('Record');
+              } else {
+                recordToEnglishButton.html('Record');
+              }
               if(data != 'Unable to understand'){
-                $('#textTranslateToJapanese').val(data);
-                translateToJapaneseButton.click();
+                if (currentRecorder == 'en-US') {
+                  $('#textTranslateToJapanese').val(data);
+                  translateToJapaneseButton.click();
+                } else {
+                  $('#textTranslateToEnglish').val(data);
+                  translateToEnglishButton.click();
+                }               
+              } else {
+                alert.show().delay(5000).fadeOut();
               }
             });
             chunks = [];
@@ -54,15 +76,16 @@ $(function(){
             translateToJapaneseButton.text('Translating to Japanese...')
 
               $.getJSON($SCRIPT_ROOT + '/_ja_translate', {
-                text: $('#textTranslateToJapanese').val() }, function(data){
-                  $('#textTranslateToEnglish').val(data);
-                  translateToJapaneseButton.text('Translate to Japanese!');
-                  let reader = new FileReader();
-                  reader.onload = function(e) {
-                    $('#myAudio').attr('src', $SCRIPT_ROOT + '/speech.ogg');
-                    $('#myAudio').play();
-                  }
-                });
+                text: $('#textTranslateToJapanese').val()
+              }, function(data){
+                $('#textTranslateToEnglish').val(data);
+                translateToJapaneseButton.text('Translate to Japanese!');
+                timestamp = Date.now();
+                en_path = '/static/en_speech.mp3?timestamp=' + timestamp;
+                $('#audioEnglish').attr('src', en_path);
+                ja_path = '/static/ja_speech.mp3?timestamp=' + timestamp;
+                $('#audioJapanese').attr('src', ja_path);
+              });
             return false
           });
 
@@ -73,11 +96,17 @@ $(function(){
               text: $('#textTranslateToEnglish').val()
             }, function(data){
               $('#textTranslateToJapanese').val(decodeURIComponent(data));
-              translateToEnglishButton.text('Translate to English!')
+              translateToEnglishButton.text('Translate to English!');
+              timestamp = Date.now();
+              ja_path = '/static/ja_speech.mp3?timestamp=' + timestamp;
+              $('#audioJapanese').attr('src', ja_path);
+              en_path = '/static/en_speech.mp3?timestamp=' + timestamp;
+              $('#audioEnglish').attr('src', en_path);
             });
           });
 
           recordToJapaneseButton.on('mousedown', function(){
+            currentRecorder = 'en-US';
             recordToJapaneseButton.html('Recording...');
             mediaRecorder.start();
             console.log(mediaRecorder.state);
@@ -87,6 +116,15 @@ $(function(){
             console.log(mediaRecorder.state);
             console.log('Recorder stopped');
             recordToJapaneseButton.html('Record');
+          });
+
+          recordToEnglishButton.on('mousedown', function(){
+            currentRecorder = 'ja';
+            recordToEnglishButton.html('Recording...');
+            mediaRecorder.start();
+          }).on('mouseup mouseleave', function(){
+            mediaRecorder.stop();
+            recordToEnglishButton.html('Record');
           });
         },
         function(err){
@@ -103,6 +141,14 @@ $(function(){
       Gummy: Translate Me!
     </h1>
   </a>
+  <div id='unableToUnderstandAlert' class="row">
+    <div class="col-xs-4 col-xs-offset-4">
+      <div class='text-center alert alert-danger alert-dismissible'>
+        <h4>Unable to Understand!</h4>
+        <p>Try recording again with a cleaner voice</p>
+      </div>
+    </div>
+  </div>
   <br />
   <div class="row">
     <div class="col-sm-6 col-xs-12">
@@ -111,7 +157,9 @@ $(function(){
         <textarea class='form-control' placeholder='Eg. Hello World' id='textTranslateToJapanese' required >{{ translated_en_text }}</textarea>
       </div>
       <div class='text-center'>
-        <audio id='myAudio' autoplay controls></audio>
+        <audio id='audioEnglish' controls>
+          <source src="" type='audio/mpeg'>
+        </audio>
       </div>
       <div class="form-group text-center">
         <button type='button' class='btn btn-default' id='translateToJapanese'>Translate to Japanese!</button>
@@ -123,9 +171,14 @@ $(function(){
       <div class="form-group">
         <textarea class='form-control' placeholder='Eg. こんにちは、世界。' id='textTranslateToEnglish' required >{{ translated_ja_text }}</textarea>
       </div>
+      <div class='text-center'>
+        <audio id='audioJapanese' controls>
+          <source src="" type='audio/mpeg'>
+        </audio>
+      </div>
       <div class="form-group text-center">
         <button type='button' class='btn btn-default' id='translateToEnglish'>Translate to English!</button>
-        <button type='button' class='btn btn-default'>Record</button>
+        <button type='button' class='btn btn-default' id='recordToEnglish'>Record</button>
       </div>
     </div>
   </div>
