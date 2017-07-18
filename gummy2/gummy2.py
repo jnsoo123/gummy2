@@ -66,7 +66,7 @@ def record_voice():
         with sr.AudioFile('speech.wav') as source:
             audio = r.record(source)
     
-            text = r.recognize_google(audio, language=str(lang))
+        text = r.recognize_google(audio, language=str(lang))
     except Exception:
         text = 'Unable to understand'
     finally:
