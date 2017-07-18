@@ -15,7 +15,7 @@ app.config.from_object(__name__)
 
 @app.route('/')
 def home():
-#    remove_files()
+    remove_files()
     return render_template('home.html')
 
 @app.route('/_ja_translate', methods=['GET'])
@@ -43,31 +43,30 @@ def en_translate():
 @app.route('/_record_voice', methods=['POST'])
 def record_voice():
     remove_files()
-
-    lang = request.form.get('language')
-
-    f = open('speech.ogg', 'wb')
-    f.write(request.files['file'].read())
-    f.close()
-
-    cmdline = [
-        'avconv',
-        '-i',
-        'speech.ogg',
-        '-vn',
-        '-f',
-        'wav',
-        'speech.wav'
-    ]
-
-    sp.call(cmdline)
-
-    r = sr.Recognizer()
-    with sr.AudioFile('speech.wav') as source:
-        audio = r.record(source)
-    
     try:
-        text = r.recognize_google(audio, language=str(lang))
+        lang = request.form.get('language')
+
+        f = open('speech.ogg', 'wb')
+        f.write(request.files['file'].read())
+        f.close()
+
+        cmdline = [
+            'avconv',
+            '-i',
+            'speech.ogg',
+            '-vn',
+            '-f',
+            'wav',
+            'speech.wav'
+        ]
+
+        sp.call(cmdline)
+
+        r = sr.Recognizer()
+        with sr.AudioFile('speech.wav') as source:
+            audio = r.record(source)
+    
+            text = r.recognize_google(audio, language=str(lang))
     except Exception:
         text = 'Unable to understand'
     finally:

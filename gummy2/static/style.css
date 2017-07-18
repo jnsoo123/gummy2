@@ -15,7 +15,6 @@ body {
   border: none;
 }
 
-.btn.btn-default {
-  background-color: white;
+.btn {
   border-radius: 25px;
 }

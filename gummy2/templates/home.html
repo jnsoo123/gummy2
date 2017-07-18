@@ -13,8 +13,6 @@ $(function(){
   var currentRecorder = '';
   var chunks = [];
 
-  //initialization
-
   alert.hide();
 
   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -149,7 +147,7 @@ $(function(){
       </div>
     </div>
   </div>
-  <br />
+  <hr />
   <div class="row">
     <div class="col-sm-6 col-xs-12">
       <h3 class="text-center">Translate to Japanese</h3>
@@ -163,7 +161,7 @@ $(function(){
       </div>
       <div class="form-group text-center">
         <button type='button' class='btn btn-default' id='translateToJapanese'>Translate to Japanese!</button>
-        <button type='button' class='btn btn-default' id='recordToJapanese'>Record</button>
+        <button type='button' class='btn btn-danger' id='recordToJapanese'>Record</button>
       </div>
     </div>
     <div class="col-sm-6 col-xs-12">
@@ -178,7 +176,7 @@ $(function(){
       </div>
       <div class="form-group text-center">
         <button type='button' class='btn btn-default' id='translateToEnglish'>Translate to English!</button>
-        <button type='button' class='btn btn-default' id='recordToEnglish'>Record</button>
+        <button type='button' class='btn btn-danger' id='recordToEnglish'>Record</button>
       </div>
     </div>
   </div>
