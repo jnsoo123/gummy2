@@ -18,27 +18,30 @@ def home():
     remove_files()
     return render_template('home.html')
 
-@app.route('/_ja_translate', methods=['GET'])
-def ja_translate():
+@app.route('/_translate', methods=['GET'])
+def translate():
     remove_files()
-    text = request.args.get('text', '', type=str)
 
-    translate = Translator(to_lang='ja', from_lang='en-US')
-    translated_text = translate.translate(text)
-
-    save_speech_mp3_files(text, translated_text)
-    return jsonify(translated_text)
-
-@app.route('/_en_translate', methods=['GET'])
-def en_translate():
-    remove_files()
     text = request.args.get('text', '', type=unicode)
+    lang_to = request.args.get('lang_to', '', type=str)
+    lang_from = request.args.get('lang_from', '', type=str)
 
-    translate = Translator(to_lang='en-US', from_lang='ja')
-    translated_text = urllib.quote(translate.translate(text.encode('utf-8')))
+    print request.args
+    
+    translate = Translator(to_lang=lang_to, from_lang=lang_from)
 
-    save_speech_mp3_files(urllib.unquote(translated_text), text)
-    return jsonify(translated_text)
+    try:
+        translated_text = translate.translate(text)
+    except KeyError:
+        try:
+            translated_text = translate.translate(str(text))
+        except UnicodeEncodeError:
+            translated_text = urllib.quote(translate.translate(text.encode('utf-8')))
+    except UnicodeEncodeError:
+        translated_text = urllib.quote(translate.translate(text.encode('utf-8')))
+
+    save_speech_mp3_files(text, translated_text, lang_from, lang_to)
+    return jsonify(urllib.unquote(translated_text))
 
 @app.route('/_record_voice', methods=['POST'])
 def record_voice():
@@ -74,13 +77,13 @@ def record_voice():
         print 'text: ' + text
         return jsonify(text)
 
-def save_speech_mp3_files(en_text, ja_text):
+def save_speech_mp3_files(text, translated_text, text_lang, translated_text_lang):
     UPLOAD_FOLDER = os.path.dirname(os.path.abspath(__file__))
     print UPLOAD_FOLDER
 
-    tts_en = gTTS(text=en_text, lang='en')
+    tts_en = gTTS(text=text.encode('utf-8'), lang=text_lang)
     tts_en.save(os.path.join(UPLOAD_FOLDER, 'static', 'en_speech.mp3'))
-    tts_ja = gTTS(text=ja_text.encode('utf-8'), lang='ja')
+    tts_ja = gTTS(text=translated_text.encode('utf-8'), lang=translated_text_lang)
     tts_ja.save(os.path.join(UPLOAD_FOLDER, 'static', 'ja_speech.mp3'))
 
 def remove_files():
