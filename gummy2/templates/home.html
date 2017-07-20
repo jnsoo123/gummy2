@@ -9,28 +9,27 @@ $(function(){
   var recordButton              = $('#recordVoice');
   var alert                     = $('#unableToUnderstandAlert');
 
-  var playRecordEnglish         = $('#playRecordEnglish');
-  var playRecordJapanese        = $('#playRecordJapanese');
+  var playRecordLeft            = $('#playRecordLeft');
+  var playRecordRight           = $('#playRecordRight');
 
-  var audioEnglish              = document.getElementById('audioEnglish')
-  var audioJapanese             = document.getElementById('audioJapanese')
+  var audioLeft              = document.getElementById('audioLeft')
+  var audioRight             = document.getElementById('audioRight')
 
-  var currentRecorder = '';
   var chunks = [];
 
   alert.hide();
-  playRecordEnglish.hide();
-  playRecordJapanese.hide();
+  playRecordLeft.hide();
+  playRecordRight.hide();
   $('audio').hide();
 
-  audioEnglish.onended = function(){
-    playRecordEnglish.html('<i class="fa fa-play"></i>');
-    playRecordEnglish.attr('disabled', false);
+  audioLeft.onended = function(){
+    playRecordLeft.html('<i class="fa fa-play"></i>');
+    playRecordLeft.attr('disabled', false);
   }
 
-  audioJapanese.onended = function(){
-    playRecordJapanese.html('<i class="fa fa-play"></i>');
-    playRecordJapanese.attr('disabled', false);
+  audioRight.onended = function(){
+    playRecordRight.html('<i class="fa fa-play"></i>');
+    playRecordRight.attr('disabled', false);
   }
 
   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -48,8 +47,7 @@ $(function(){
             chunks.push(e.data);
           }
 
-          mediaRecorder.onstop = function(e, a){
-            console.log(a);
+          mediaRecorder.onstop = function(e){
             recordButton.html('Translating voice...')
             console.log('recorder stopped');
             var blob = new Blob(chunks, { 'type': 'audio/ogg;codecs=opus' });
@@ -63,7 +61,6 @@ $(function(){
               processData: false,
               contentType: false
             }).done(function(data){
-              console.log(data);
               recordButton.html('<i class="fa fa-microphone"></i>');
               if(data != 'Unable to understand'){
                 $('#textTranslateToJapanese').val(data);
@@ -89,16 +86,16 @@ $(function(){
             }
           });
 
-          playRecordEnglish.click(function(){
+          playRecordLeft.click(function(){
             $(this).html('Playing...')
             $(this).attr('disabled', 'true')
-            audioEnglish.play();
+            audioLeft.play();
           });
 
-          playRecordJapanese.click(function(){
+          playRecordRight.click(function(){
             $(this).html('Playing...');
             $(this).attr('disabled', 'true')
-            audioJapanese.play();
+            audioRight.play();
           });
 
           translateButton.bind('click', function(){
@@ -115,17 +112,16 @@ $(function(){
                 translateButton.html('<i class="fa fa-language"></i> Translate');
                 timestamp = Date.now();
                 en_path = '/static/speech_left.mp3?timestamp=' + timestamp;
-                $('#audioEnglish').attr('src', en_path);
+                $('#audioLeft').attr('src', en_path);
                 ja_path = '/static/speech_right.mp3?timestamp=' + timestamp;
-                $('#audioJapanese').attr('src', ja_path);
-                playRecordEnglish.show();
-                playRecordJapanese.show();
+                $('#audioRight').attr('src', ja_path);
+                playRecordLeft.show();
+                playRecordRight.show();
               });
             return false
           });
 
           recordButton.on('mousedown', function(){
-            currentRecorder = 'en-US';
             recordButton.html('Recording...');
             mediaRecorder.start();
           }).on('mouseup mouseleave', function(){
@@ -167,7 +163,7 @@ $(function(){
         <textarea class='form-control' placeholder='Eg. Hello World' id='textTranslateToJapanese' required >{{ translated_en_text }}</textarea>
       </div>
       <div class='text-center'>
-        <audio id='audioEnglish' controls>
+        <audio id='audioLeft' controls>
           <source src="" type='audio/mpeg'>
         </audio>
       </div>
@@ -176,7 +172,7 @@ $(function(){
           <i class='fa fa-language'></i> Translate
         </button>
         <button type='button' class='btn btn-default' id='recordVoice' style='color: red;'><i class='fa fa-microphone'></i></button>
-        <button type='button' class='btn btn-danger' id='playRecordEnglish'><i class='fa fa-play'></i></button>
+        <button type='button' class='btn btn-danger' id='playRecordLeft'><i class='fa fa-play'></i></button>
       </div>
     </div>
     <div class="col-sm-6 col-xs-12">
@@ -190,12 +186,12 @@ $(function(){
         <textarea disabled class='form-control' placeholder='Eg. こんにちは、世界。' id='textTranslateToEnglish' required >{{ translated_ja_text }}</textarea>
       </div>
       <div class='text-center'>
-        <audio id='audioJapanese' controls>
+        <audio id='audioRight' controls>
           <source src="" type='audio/mpeg'>
         </audio>
       </div>
       <div class="form-group text-center">
-        <button type='button' class='btn btn-danger' id='playRecordJapanese'><i class='fa fa-play'></i></button>
+        <button type='button' class='btn btn-danger' id='playRecordRight'><i class='fa fa-play'></i></button>
       </div>
     </div>
   </div>
