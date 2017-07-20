@@ -1,4 +1,5 @@
 import os
+import sqlite3
 from flask import Flask, request, g, redirect, url_for, abort, render_template, flash, jsonify
 from flask_bootstrap import Bootstrap
 from translate import Translator
@@ -13,10 +14,40 @@ Bootstrap(app)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config.from_object(__name__)
 
+app.config.update(dict(
+    DATABASE=os.path.join(app.root_path, 'gummy2.db'),
+    SECRET_KEY='development key',
+    USERNAME='admin',
+    PASSWORD='default'
+))
+
+def connect_db():
+    rv = sqlite3.connect(app.config['DATABASE'])
+    rv.row_factory = sqlite3.Row
+    return rv
+
 @app.route('/')
 def home():
     remove_files()
     return render_template('home.html')
+
+@app.route('/_check_locale', methods=['GET'])
+def check_locale():
+    language_name = request.args.get('language_name', '', type=str)
+    language_locale = request.args.get('language_locale', '', type=str)
+
+    translate = Translator(from_lang='en-US', to_lang=language_locale)
+
+    translated_text = translate.translate('test')
+
+    if 'INVALID TARGET LANGUAGE' in translated_text:
+        return jsonify('invalid')
+    else:
+        try:
+            tts = gTTS(text='test', lang=language_locale)
+            return jsonify('valid')
+        except Exception:
+            return jsonify('not supported')
 
 @app.route('/_translate', methods=['GET'])
 def translate():

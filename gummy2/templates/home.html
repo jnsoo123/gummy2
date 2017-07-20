@@ -5,19 +5,23 @@
 $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
 $(function(){
-  var translateButton           = $('#translateButton');
-  var recordButton              = $('#recordVoice');
-  var alert                     = $('#unableToUnderstandAlert');
+  var translateButton = $('#translateButton');
+  var recordButton    = $('#recordVoice');
 
-  var playRecordLeft            = $('#playRecordLeft');
-  var playRecordRight           = $('#playRecordRight');
+  var alert = $('#unableToUnderstandAlert');
 
-  var audioLeft              = document.getElementById('audioLeft')
-  var audioRight             = document.getElementById('audioRight')
+  var playRecordLeft  = $('#playRecordLeft');
+  var playRecordRight = $('#playRecordRight');
+
+  var audioLeft  = document.getElementById('audioLeft')
+  var audioRight = document.getElementById('audioRight')
+
+  var openAddLanguageModal = $('#openAddLanguageModal');
+  var addLanguageModal     = $('#addLanguageModal');
 
   var chunks = [];
 
-  alert.hide();
+  $('.alert').hide();
   playRecordLeft.hide();
   playRecordRight.hide();
   $('audio').hide();
@@ -30,6 +34,12 @@ $(function(){
   audioRight.onended = function(){
     playRecordRight.html('<i class="fa fa-play"></i>');
     playRecordRight.attr('disabled', false);
+  }
+
+  let addLanguage = function(name, locale){
+    console.log(123);
+    newLanguage = '<a class="btn btn-default" data-lang="' + locale + '">' + name + '</a>';
+    $('.btn-group').append(newLanguage);
   }
 
   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -72,7 +82,33 @@ $(function(){
             chunks = [];
           }
 
-          $('.btn-group a').click(function(){
+          $('#addLanguageForm').submit(function(e){
+            e.preventDefault();
+
+            let languageName    = $('#languageName').val();
+            let languageLocale  = $('#languageLocale').val();
+            let addButton       = $('#addLanguageButton');
+
+            addButton.text('Adding Language...').attr('disabled', true);
+
+            $.getJSON($SCRIPT_ROOT + '/_check_locale', {
+              language_locale: languageLocale 
+            }, function(data){
+              addButton.text('Add Language').attr('disabled', false);
+              if (data == 'invalid') {
+                $('#alertInvalidLocale').show();
+              } else if (data == 'not supported') {
+                $('#alertNotSupportedLocale').show();
+              } else {
+                $('#addLanguageModal').modal('hide');
+                $('#alertInvalidLocale').hide();
+                $('#alertNotSupportedLocale').hide();
+                addLanguage(languageName, languageLocale);
+              }
+            });
+          });
+
+          $('.btn-group').delegate('a', 'click', function(){
             $(this).parent().children().removeClass('active');
             $(this).addClass('active');
 
@@ -142,6 +178,11 @@ $(function(){
       Gummy: Translate Me!
     </h1>
   </a>
+  <div class='text-center'>
+    <button type='button' data-toggle='modal' data-target='#addLanguageModal' class='btn btn-danger'>
+      <i class='fa fa-plus'></i> Add Language
+    </button>
+  </div>
   <div id='unableToUnderstandAlert' class="row">
     <div class="col-xs-4 col-xs-offset-4">
       <div class='text-center alert alert-danger alert-dismissible'>
@@ -193,6 +234,37 @@ $(function(){
       <div class="form-group text-center">
         <button type='button' class='btn btn-danger' id='playRecordRight'><i class='fa fa-play'></i></button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="addLanguageModal" class='modal fade' role='dialog'>
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title text-center">Add Language</h4>
+      </div>
+      <form id='addLanguageForm'>
+        <div class="modal-body">
+          <div class="alert alert-dismissible alert-danger" id='alertInvalidLocale'>
+            <button type="button" class="close" data-dismiss="alert">&times;</button> 
+            <strong>Invalid locale code!</strong> Try checking out this link for valid locale codes.
+          </div>
+          <div class="alert alert-dismissible alert-danger" id='alertNotSupportedLocale'>
+            <button type="button" class="close" data-dismiss="alert">&times;</button> 
+            <strong>Locale code is not supported!</strong> Try checking out this link for supported locale codes.
+          </div>
+          <label for='languageName'>Language</label>
+          <input type='text' class='form-control' id='languageName' placeholder='Eg. English' required />
+          <label for='languageLocale'>Locale Code</label>
+          <input type='text' class='form-control' id='languageLocale' placeholder='Eg. en-US' required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-danger" id='addLanguageButton'>Add Language</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
