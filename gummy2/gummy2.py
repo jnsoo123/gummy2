@@ -26,25 +26,53 @@ def connect_db():
     rv.row_factory = sqlite3.Row
     return rv
 
+def get_db():
+    if not hasattr(g, 'sqlite_db'):
+        g.sqlite_db = connect_db()
+    return g.sqlite_db
+
+@app.teardown_appcontext
+def close_db(error):
+    if hasattr(g, 'sqlite_db'):
+        g.sqlite_db.close()
+
+def init_db():
+    db = get_db()
+    with app.open_resource('schema.sql', mode='r') as f:
+        db.cursor().executescript(f.read())
+
+@app.cli.command('initdb')
+def initdb_command():
+    init_db()
+    print('Database initialized.')
+
 @app.route('/')
 def home():
     remove_files()
-    return render_template('home.html')
+    db = get_db()
+    cur = db.execute('select name, code from locales order by id asc')
+    locales = cur.fetchall()
+    print locales
+    return render_template('home.html', locales=locales)
 
 @app.route('/_check_locale', methods=['GET'])
 def check_locale():
     language_name = request.args.get('language_name', '', type=str)
     language_locale = request.args.get('language_locale', '', type=str)
-
     translate = Translator(from_lang='en-US', to_lang=language_locale)
-
-    translated_text = translate.translate('test')
+    try:
+        translated_text = translate.translate('test')
+    except TypeError:
+        return jsonify('invalid')
 
     if 'INVALID TARGET LANGUAGE' in translated_text:
         return jsonify('invalid')
     else:
         try:
             tts = gTTS(text='test', lang=language_locale)
+            db = get_db()
+            db.execute('insert into locales (name, code) values (?, ?)', [language_name, language_locale])
+            db.commit()
             return jsonify('valid')
         except Exception:
             return jsonify('not supported')
@@ -60,6 +88,7 @@ def translate():
     print request.args
     
     translate = Translator(to_lang=lang_to, from_lang=lang_from)
+    print text
 
     try:
         translated_text = translate.translate(text)

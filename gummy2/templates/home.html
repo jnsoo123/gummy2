@@ -92,6 +92,7 @@ $(function(){
             addButton.text('Adding Language...').attr('disabled', true);
 
             $.getJSON($SCRIPT_ROOT + '/_check_locale', {
+              language_name: languageName,
               language_locale: languageLocale 
             }, function(data){
               addButton.text('Add Language').attr('disabled', false);
@@ -195,9 +196,13 @@ $(function(){
   <div class="row">
     <div class="col-sm-6 col-xs-12">
       <div id='btn-group__left' class="btn-group btn-group-justified">
-        <a class="btn btn-default active" data-lang='en-US'>English</a>
-        <a class="btn btn-default" data-lang='ja'>Japanese</a>
-        <a class="btn btn-default" data-lang='zh-CN'>Chinese</a>
+        {% for locale in locales %}
+        {% if locales.index(locale) == 0 %}
+        <a class="btn btn-default active" data-lang='{{ locale.code }}'>{{ locale.name }}</a>
+        {% else %}
+        <a class="btn btn-default" data-lang='{{ locale.code }}'>{{ locale.name }}</a>
+        {% endif %}
+        {% endfor %}
       </div>
       <br />
       <div class="form-group">
@@ -218,9 +223,13 @@ $(function(){
     </div>
     <div class="col-sm-6 col-xs-12">
       <div id='btn-group__right' class="btn-group btn-group-justified">
-        <a class="btn btn-default" data-lang='en-US'>English</a>
-        <a class="btn btn-default active" data-lang='ja'>Japanese</a>
-        <a class="btn btn-default" data-lang='zh-CN'>Chinese</a>
+        {% for locale in locales %}
+        {% if locales.index(locale) == 1 %}
+        <a class="btn btn-default active" data-lang='{{ locale.code }}'>{{ locale.name }}</a>
+        {% else %}
+        <a class="btn btn-default" data-lang='{{ locale.code }}'>{{ locale.name }}</a>
+        {% endif %}
+        {% endfor %}
       </div>
       <br />
       <div class="form-group">
