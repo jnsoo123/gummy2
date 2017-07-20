@@ -141,9 +141,19 @@ def save_speech_mp3_files(text, translated_text, text_lang, translated_text_lang
     UPLOAD_FOLDER = os.path.dirname(os.path.abspath(__file__))
     print UPLOAD_FOLDER
 
-    tts_en = gTTS(text=text.encode('utf-8'), lang=text_lang)
+    if text_lang == 'en-US':
+        text = urllib.unquote(text.encode('utf-8'))
+    else:
+        text = text.encode('utf-8')
+
+    if translated_text_lang == 'en-US':
+        translated_text = urllib.unquote(translated_text.encode('utf-8'))
+    else:
+        translated_text = translated_text.encode('utf-8')
+
+    tts_en = gTTS(text=text, lang=text_lang)
     tts_en.save(os.path.join(UPLOAD_FOLDER, 'static', 'speech_left.mp3'))
-    tts_ja = gTTS(text=translated_text.encode('utf-8'), lang=translated_text_lang)
+    tts_ja = gTTS(text=translated_text, lang=translated_text_lang)
     tts_ja.save(os.path.join(UPLOAD_FOLDER, 'static', 'speech_right.mp3'))
 
 def remove_files():
