@@ -10,10 +10,10 @@ $(function(){
 
   var alert = $('#unableToUnderstandAlert');
 
-  var playRecordLeft  = $('#playRecordLeft');
-  var playRecordRight = $('#playRecordRight');
+  var synthesiserRight = $('#playSynthesiserRight');
+  var synthesiserLeft  = $('#playSynthesiserLeft');
 
-  var audioLeft  = document.getElementById('audioLeft')
+  var audioLeft  = document.getElementById('audioLeft');
   var audioRight = document.getElementById('audioRight')
 
   var openAddLanguageModal = $('#openAddLanguageModal');
@@ -22,25 +22,33 @@ $(function(){
   var chunks = [];
 
   $('.alert').hide();
-  playRecordLeft.hide();
-  playRecordRight.hide();
+  synthesiserLeft.hide();
+  synthesiserRight.hide();
   $('audio').hide();
-
-  audioLeft.onended = function(){
-    playRecordLeft.html('<i class="fa fa-play"></i>');
-    playRecordLeft.attr('disabled', false);
-  }
-
-  audioRight.onended = function(){
-    playRecordRight.html('<i class="fa fa-play"></i>');
-    playRecordRight.attr('disabled', false);
-  }
 
   let addLanguage = function(name, locale){
     console.log(123);
     newLanguage = '<a class="btn btn-default" data-lang="' + locale + '">' + name + '</a>';
     $('.btn-group').append(newLanguage);
   }
+
+  // Speech Synthesiser
+
+  var synth = window.speechSynthesis;
+
+  synthesiserRight.on('click', function(){
+    var utterThis = new SpeechSynthesisUtterance($('#textTranslateToEnglish').val());
+    utterThis.lang = translateButton.attr('data-to');
+    window.speechSynthesis.speak(utterThis);
+  });
+
+  synthesiserLeft.on('click', function(){
+    var utterThis = new SpeechSynthesisUtterance($('#textTranslateToJapanese').val());
+    utterThis.lang = translateButton.attr('data-from');
+    window.speechSynthesis.speak(utterThis);
+  })
+
+  // end speech synthesiser
 
   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
   if (navigator.getUserMedia) {
@@ -76,6 +84,7 @@ $(function(){
                 $('#textTranslateToJapanese').val(data);
                 translateButton.click();
               } else {
+                console.log(alert)
                 alert.show().delay(5000).fadeOut();
               }
             });
@@ -123,18 +132,6 @@ $(function(){
             }
           });
 
-          playRecordLeft.click(function(){
-            $(this).html('Playing...')
-            $(this).attr('disabled', 'true')
-            audioLeft.play();
-          });
-
-          playRecordRight.click(function(){
-            $(this).html('Playing...');
-            $(this).attr('disabled', 'true')
-            audioRight.play();
-          });
-
           translateButton.bind('click', function(){
             $(this).attr('disabled', true);
             translateButton.text('Translating...');
@@ -152,8 +149,8 @@ $(function(){
                 $('#audioLeft').attr('src', en_path);
                 ja_path = '/static/speech_right.mp3?timestamp=' + timestamp;
                 $('#audioRight').attr('src', ja_path);
-                playRecordLeft.show();
-                playRecordRight.show();
+                synthesiserLeft.show();
+                synthesiserRight.show();
               });
             return false
           });
@@ -208,17 +205,12 @@ $(function(){
       <div class="form-group">
         <textarea class='form-control' rows='4' placeholder='Eg. Hello World' id='textTranslateToJapanese' required >{{ translated_en_text }}</textarea>
       </div>
-      <div class='text-center'>
-        <audio id='audioLeft' controls>
-          <source src="" type='audio/mpeg'>
-        </audio>
-      </div>
       <div class="form-group text-center">
         <button type='button' class='btn btn-default' id='translateButton' data-from='en-US' data-to='ja'>
           <i class='fa fa-language'></i> Translate
         </button>
         <button type='button' class='btn btn-default' id='recordVoice' style='color: red;'><i class='fa fa-microphone'></i></button>
-        <button type='button' class='btn btn-danger' id='playRecordLeft'><i class='fa fa-play'></i></button>
+        <button type='button' class='btn btn-danger' id='playSynthesiserLeft'><i class='fa fa-play'></i></button>
       </div>
     </div>
     <div class="col-sm-6 col-xs-12">
@@ -235,13 +227,8 @@ $(function(){
       <div class="form-group">
         <textarea disabled class='form-control' rows='4' placeholder='Eg. こんにちは、世界。' id='textTranslateToEnglish' required >{{ translated_ja_text }}</textarea>
       </div>
-      <div class='text-center'>
-        <audio id='audioRight' controls>
-          <source src="" type='audio/mpeg'>
-        </audio>
-      </div>
       <div class="form-group text-center">
-        <button type='button' class='btn btn-danger' id='playRecordRight'><i class='fa fa-play'></i></button>
+        <button type='button' class='btn btn-danger' id='playSynthesiserRight'><i class='fa fa-play'></i></button>
       </div>
     </div>
   </div>
