@@ -49,6 +49,8 @@ def initdb_command():
 def home():
     remove_files()
     db = get_db()
+    #db.execute('delete from locales')
+    #db.commit()
     cur = db.execute('select name, code from locales order by id asc')
     locales = cur.fetchall()
     print locales
@@ -67,14 +69,26 @@ def check_locale():
     if 'INVALID TARGET LANGUAGE' in translated_text:
         return jsonify('invalid')
     else:
-        try:
-            tts = gTTS(text='test', lang=language_locale)
-            db = get_db()
-            db.execute('insert into locales (name, code) values (?, ?)', [language_name, language_locale])
-            db.commit()
-            return jsonify('valid')
-        except Exception:
-            return jsonify('not supported')
+        db = get_db()
+        db.execute('insert into locales (name, code) values (?, ?)', [language_name, language_locale])
+        db.commit()
+        return jsonify('valid')
+
+@app.route('/_edit_language', methods=['POST'])
+def edit_language():
+    new_name = request.form.get('editName')
+    new_code = request.form.get('editCode')
+    old_code = request.form.get('locale')
+    
+    db = get_db()
+    db.execute('update locales set name = ?, code = ? where code = ?', [new_name, new_code, old_code])
+    db.commit()
+
+    cur = db.execute('select name, code from locales order by id asc')
+    locales = cur.fetchall()
+
+    return jsonify({ 'data': render_template('home.html', locales=locales) })
+
 
 @app.route('/_translate', methods=['GET'])
 def translate():

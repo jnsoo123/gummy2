@@ -5,34 +5,51 @@
 $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
 $(function(){
-  var translateButton = $('#translateButton');
-  var recordButton    = $('#recordVoice');
-
-  var alert = $('#unableToUnderstandAlert');
-
-  var synthesiserRight = $('#playSynthesiserRight');
-  var synthesiserLeft  = $('#playSynthesiserLeft');
-
-  var audioLeft  = document.getElementById('audioLeft');
-  var audioRight = document.getElementById('audioRight')
-
-  var openAddLanguageModal = $('#openAddLanguageModal');
-  var addLanguageModal     = $('#addLanguageModal');
+  var translateButton       = $('#translateButton');
+  var recordButton          = $('#recordVoice');
+  var alert                 = $('#unableToUnderstandAlert');
+  var synthesiserRight      = $('#playSynthesiserRight');
+  var synthesiserLeft       = $('#playSynthesiserLeft');
+  var audioLeft             = document.getElementById('audioLeft');
+  var audioRight            = document.getElementById('audioRight')
+  var openAddLanguageModal  = $('#openAddLanguageModal');
+  var addLanguageModal      = $('#addLanguageModal');
 
   var chunks = [];
 
   $('.alert').hide();
+  $('audio').hide();
   synthesiserLeft.hide();
   synthesiserRight.hide();
-  $('audio').hide();
+  $('.edit-mode').hide();
+
+  // == FUNCTIONS ==
 
   let addLanguage = function(name, locale){
     console.log(123);
-    newLanguage = '<a class="btn btn-default" data-lang="' + locale + '">' + name + '</a>';
+    newLanguage = '<a class="btn btn-default btn-sm" data-lang="' + locale + '">' + name + '</a>';
     $('.btn-group').append(newLanguage);
   }
 
-  // Speech Synthesiser
+  // == END FUNCTION ==
+
+  // == EDIT EVENTS ==
+  
+  $('.btn-edit-language').on('click', function(){
+    let langCode = $(this).attr('data-lang');
+    $('.edit-mode-lang-'+langCode).show();
+    $('.show-mode-lang-'+langCode).hide();
+  });
+
+  $('.btn-edit__cancel').on('click', function(){
+    let langCode = $(this).attr('data-lang');
+    $('.edit-mode-lang-'+langCode).hide();
+    $('.show-mode-lang-'+langCode).show();
+  });
+
+  // == END EDIT EVENTS == 
+
+  // == SPEECH SYNTHESISER ==
 
   var synth = window.speechSynthesis;
 
@@ -48,7 +65,7 @@ $(function(){
     window.speechSynthesis.speak(utterThis);
   })
 
-  // end speech synthesiser
+  // == END SPEECH SYNTHESISER ==
 
   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
   if (navigator.getUserMedia) {
@@ -118,6 +135,25 @@ $(function(){
             });
           });
 
+          $('.btn-edit__save').on('click', function(){
+            let languageLocale    = $(this).attr('data-lang');
+            let editLanguageName  = $('.edit-mode-lang-'+languageLocale+' .input__locale-name').val();
+            let editLanguageCode  = $('.edit-mode-lang-'+languageLocale+' .input__locale-code').val();
+
+            $.ajax({
+              url: $SCRIPT_ROOT + '/_edit_language',
+              data: {
+                locale: languageLocale,
+                editName: editLanguageName,
+                editCode: editLanguageCode
+              },
+              method: 'POST',
+            }).done(function(response){
+              console.log(response);
+              $('body').html(response.data);
+            });
+          });
+
           $('.btn-group').delegate('a', 'click', function(){
             $(this).parent().children().removeClass('active');
             $(this).addClass('active');
@@ -171,14 +207,15 @@ $(function(){
 </script>
 
 <div class="container main-container">
-  <a href="/">
-    <h1 class="text-center">
-      Gummy: Translate Me!
-    </h1>
-  </a>
+  <h3 class="text-center">
+    Gummy: Translate Me!
+  </h3>
   <div class='text-center'>
-    <button type='button' data-toggle='modal' data-target='#addLanguageModal' class='btn btn-danger'>
+    <button type='button' data-toggle='modal' data-target='#addLanguageModal' class='btn btn-primary'>
       <i class='fa fa-plus'></i> Add Language
+    </button>
+    <button type='button' class='btn btn-default' data-toggle='modal' data-target='#settingsModal'>
+      <i class='fa fa-cog'></i> Settings
     </button>
   </div>
   <div id='unableToUnderstandAlert' class="row">
@@ -195,9 +232,13 @@ $(function(){
       <div id='btn-group__left' class="btn-group btn-group-justified">
         {% for locale in locales %}
         {% if locales.index(locale) == 0 %}
-        <a class="btn btn-default active" data-lang='{{ locale.code }}'>{{ locale.name }}</a>
+        <a class="btn btn-default active" data-lang='{{ locale.code }}'>
+          {{ locale.name }}
+        </a>
         {% else %}
-        <a class="btn btn-default" data-lang='{{ locale.code }}'>{{ locale.name }}</a>
+        <a class="btn btn-default" data-lang='{{ locale.code }}'>
+          {{ locale.name }}
+        </a>
         {% endif %}
         {% endfor %}
       </div>
@@ -210,7 +251,8 @@ $(function(){
           <i class='fa fa-language'></i> Translate
         </button>
         <button type='button' class='btn btn-default' id='recordVoice' style='color: red;'><i class='fa fa-microphone'></i></button>
-        <button type='button' class='btn btn-danger' id='playSynthesiserLeft'><i class='fa fa-play'></i></button>
+        <button type='button' class='btn btn-info' id='playSynthesiserLeft'><i class='fa fa-play'></i> Play</button>
+        <a href='/' class='btn btn-danger'><i class='fa fa-undo'></i> Reset</a>
       </div>
     </div>
     <div class="col-sm-6 col-xs-12">
@@ -228,7 +270,7 @@ $(function(){
         <textarea disabled class='form-control' rows='4' placeholder='Eg. こんにちは、世界。' id='textTranslateToEnglish' required >{{ translated_ja_text }}</textarea>
       </div>
       <div class="form-group text-center">
-        <button type='button' class='btn btn-danger' id='playSynthesiserRight'><i class='fa fa-play'></i></button>
+        <button type='button' class='btn btn-info' id='playSynthesiserRight'><i class='fa fa-play'></i> Play</button>
       </div>
     </div>
   </div>
@@ -261,6 +303,58 @@ $(function(){
           <button type="submit" class="btn btn-danger" id='addLanguageButton'>Add Language</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+<div id="settingsModal" class='modal fade' role='dialog'>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"><i class='fa fa-cog'></i> Settings</h4>
+      </div>
+      <div class="modal-body">
+        <table class='table table-striped'>
+          <thead>
+            <tr>
+              <th>Language</th>
+              <th>Code</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for locale in locales %}
+            <tr class='edit-mode edit-mode-lang-{{ locale.code }}'>
+              <td><input type='text' class='form-control input-sm input__locale-name' value='{{ locale.name }}' /></td>  
+              <td><input type='text' class='form-control input-sm input__locale-code' value='{{ locale.code }}' /></td>  
+              <td>
+                <button type='button' class='btn btn-success btn-sm btn-edit__save' data-lang='{{ locale.code }}'>
+                  <i class='fa fa-check'></i> Save
+                </button>
+                <button type='button' class='btn btn-default btn-sm btn-edit__cancel' data-lang='{{ locale.code }}'>
+                  <i class='fa fa-times'></i> Cancel
+                </button>
+              </td>
+            </tr>
+            <tr class='show-mode show-mode-lang-{{ locale.code }}'>
+              <td>{{ locale.name }}</td>
+              <td>{{ locale.code }}</td>
+              <td>
+                <button data-lang='{{ locale.code }}' class='btn btn-warning btn-sm btn-edit-language'>
+                  <i class='fa fa-pencil'></i> Edit
+                </button>
+                <button data-lang='{{ locale.code }}' class='btn btn-danger btn-sm btn-remove-language'>
+                  <i class='fa fa-trash'></i> Remove
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
