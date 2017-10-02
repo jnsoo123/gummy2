@@ -4,5 +4,5 @@ setup(
     name='gummy2',
     packages=['gummy2'],
     include_package_data=True,
-    install_requires=['gummy2']
+    install_requires=['flask']
 )
