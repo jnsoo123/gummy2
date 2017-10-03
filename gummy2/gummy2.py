@@ -10,8 +10,6 @@ import subprocess as sp
 app = Flask(__name__)
 Bootstrap(app)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.config['host'] = '0.0.0.0'
-app.config['threaded'] = True
 app.config.from_object(__name__)
 
 app.config.update(dict(
@@ -157,4 +155,4 @@ def remove_files():
             os.remove(f)
 
 if __name__ == '__main__':
-    app.run(debug=True, threaded=True)
+    app.run(debug=True, threaded=True, host='0.0.0.0')
