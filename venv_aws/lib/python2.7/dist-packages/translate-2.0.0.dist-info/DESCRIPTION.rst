@@ -1,0 +1,27 @@
+This is a simple, yet powerful command line translator with google translate
+behind it. You can also use it as a Python module in your code.
+
+Home-page: https://github.com/terryyin/google-translate-python
+Author: Terry Yin
+Author-email: terry.yinze@gmail.com
+License: UNKNOWN
+Description-Content-Type: UNKNOWN
+Description: 
+        This is a simple, yet powerful command line translator with google translate
+        behind it. You can also use it as a Python module in your code.
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: Freeware
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Topic :: Education
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.6
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.2
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4

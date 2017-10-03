@@ -1,4 +1,6 @@
 MANIFEST.in
+README.md
+setup.py
 gummy2/__init__.py
 gummy2/gummy2.py
 gummy2.egg-info/PKG-INFO
@@ -6,3 +8,7 @@ gummy2.egg-info/SOURCES.txt
 gummy2.egg-info/dependency_links.txt
 gummy2.egg-info/requires.txt
 gummy2.egg-info/top_level.txt
+gummy2/static/bootflat.min.css
+gummy2/static/style.css
+gummy2/templates/home.html
+gummy2/templates/layout.html

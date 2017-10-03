@@ -1,0 +1,20 @@
+body {
+  font-family: 'Titillium Web', sans-serif;
+  background-color: whitesmoke;
+}
+
+.main-container {
+  margin-top: 20px!important;
+}
+
+.main-container a{
+  color: #333;
+}
+
+.main-container textarea.form-control {
+  border: none;
+}
+
+.btn {
+  border-radius: 25px;
+}

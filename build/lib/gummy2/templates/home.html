@@ -1,0 +1,365 @@
+{% extends 'layout.html' %}
+{% block body %}
+
+<script type='text/javascript'>
+$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+
+$(function(){
+  var translateButton       = $('#translateButton');
+  var recordButton          = $('#recordVoice');
+  var alert                 = $('#unableToUnderstandAlert');
+  var synthesiserRight      = $('#playSynthesiserRight');
+  var synthesiserLeft       = $('#playSynthesiserLeft');
+  var audioLeft             = document.getElementById('audioLeft');
+  var audioRight            = document.getElementById('audioRight')
+  var openAddLanguageModal  = $('#openAddLanguageModal');
+  var addLanguageModal      = $('#addLanguageModal');
+
+  var chunks = [];
+
+  $('.alert').hide();
+  $('audio').hide();
+  synthesiserLeft.hide();
+  synthesiserRight.hide();
+  $('.edit-mode').hide();
+
+  // == FUNCTIONS ==
+
+  let addLanguage = function(name, locale){
+    console.log(123);
+    newLanguage = '<a class="btn btn-default btn-sm" data-lang="' + locale + '">' + name + '</a>';
+    $('.btn-group').append(newLanguage);
+  }
+
+  // == END FUNCTION ==
+
+  // == EDIT EVENTS ==
+  
+  $('.btn-edit-language').on('click', function(){
+    let langCode = $(this).attr('data-lang');
+    $('.edit-mode-lang-'+langCode).show();
+    $('.show-mode-lang-'+langCode).hide();
+  });
+
+  $('.btn-edit__cancel').on('click', function(){
+    let langCode = $(this).attr('data-lang');
+    $('.edit-mode-lang-'+langCode).hide();
+    $('.show-mode-lang-'+langCode).show();
+  });
+
+  // == END EDIT EVENTS == 
+
+  // == SPEECH SYNTHESISER ==
+
+  var synth = window.speechSynthesis;
+
+  synthesiserRight.on('click', function(){
+    var utterThis = new SpeechSynthesisUtterance($('#textTranslateToEnglish').val());
+    utterThis.lang = translateButton.attr('data-to');
+    window.speechSynthesis.speak(utterThis);
+  });
+
+  synthesiserLeft.on('click', function(){
+    var utterThis = new SpeechSynthesisUtterance($('#textTranslateToJapanese').val());
+    utterThis.lang = translateButton.attr('data-from');
+    window.speechSynthesis.speak(utterThis);
+  })
+
+  // == END SPEECH SYNTHESISER ==
+
+  navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+  if (navigator.getUserMedia) {
+    console.log('getUserMedia supported');
+    navigator.getUserMedia(
+        {
+          audio: true
+        },
+        function(stream){
+          console.log('successful callback');
+          var mediaRecorder = new MediaRecorder(stream);
+
+          mediaRecorder.ondataavailable = function(e){
+            chunks.push(e.data);
+          }
+
+          mediaRecorder.onstop = function(e){
+            recordButton.html('Translating voice...')
+            console.log('recorder stopped');
+            var blob = new Blob(chunks, { 'type': 'audio/ogg;codecs=opus' });
+            var form = new FormData();
+            form.append('file', blob);
+            form.append('language', translateButton.attr('data-from'))
+            $.ajax({
+              type: 'POST',
+              url: $SCRIPT_ROOT + '/_record_voice',
+              data: form,
+              processData: false,
+              contentType: false
+            }).done(function(data){
+              recordButton.html('<i class="fa fa-microphone"></i>');
+              if(data != 'Unable to understand'){
+                $('#textTranslateToJapanese').val(data);
+                translateButton.click();
+              } else {
+                console.log(alert)
+                alert.show().delay(5000).fadeOut();
+              }
+            });
+            chunks = [];
+          }
+
+          $('#addLanguageForm').submit(function(e){
+            e.preventDefault();
+
+            let languageName    = $('#languageName').val();
+            let languageLocale  = $('#languageLocale').val();
+            let addButton       = $('#addLanguageButton');
+
+            addButton.text('Adding Language...').attr('disabled', true);
+
+            $.getJSON($SCRIPT_ROOT + '/_check_locale', {
+              language_name: languageName,
+              language_locale: languageLocale 
+            }, function(data){
+              addButton.text('Add Language').attr('disabled', false);
+              if (data == 'invalid') {
+                $('#alertInvalidLocale').show();
+              } else if (data == 'not supported') {
+                $('#alertNotSupportedLocale').show();
+              } else {
+                $('#addLanguageModal').modal('hide');
+                $('#alertInvalidLocale').hide();
+                $('#alertNotSupportedLocale').hide();
+                addLanguage(languageName, languageLocale);
+              }
+            });
+          });
+
+          $('.btn-edit__save').on('click', function(){
+            let languageLocale    = $(this).attr('data-lang');
+            let editLanguageName  = $('.edit-mode-lang-'+languageLocale+' .input__locale-name').val();
+            let editLanguageCode  = $('.edit-mode-lang-'+languageLocale+' .input__locale-code').val();
+
+            $.ajax({
+              url: $SCRIPT_ROOT + '/_edit_language',
+              data: {
+                locale: languageLocale,
+                editName: editLanguageName,
+                editCode: editLanguageCode
+              },
+              method: 'POST',
+            }).done(function(response){
+              console.log(response);
+              $('body').html(response.data);
+            });
+          });
+
+          $('.btn-group').delegate('a', 'click', function(){
+            $(this).parent().children().removeClass('active');
+            $(this).addClass('active');
+
+            if ($(this).parent().is('#btn-group__left')) {
+              translateButton.attr('data-from', $(this).data('lang'));
+            } else {
+              translateButton.attr('data-to', $(this).data('lang'));
+              if ($('#textTranslateToJapanese').val()) {
+                translateButton.click();
+              }
+            }
+          });
+
+          translateButton.bind('click', function(){
+            $(this).attr('disabled', true);
+            translateButton.text('Translating...');
+
+              $.getJSON($SCRIPT_ROOT + '/_translate', {
+                text: $('#textTranslateToJapanese').val(),
+                lang_to: $(this).attr('data-to'),
+                lang_from: $(this).attr('data-from')
+              }, function(data){
+                translateButton.attr('disabled', false);
+                $('#textTranslateToEnglish').val(data);
+                translateButton.html('<i class="fa fa-language"></i> Translate');
+                timestamp = Date.now();
+                en_path = '/static/speech_left.mp3?timestamp=' + timestamp;
+                $('#audioLeft').attr('src', en_path);
+                ja_path = '/static/speech_right.mp3?timestamp=' + timestamp;
+                $('#audioRight').attr('src', ja_path);
+                synthesiserLeft.show();
+                synthesiserRight.show();
+              });
+            return false
+          });
+
+          recordButton.on('mousedown', function(){
+            recordButton.html('Recording...');
+            mediaRecorder.start();
+          }).on('mouseup mouseleave', function(){
+            mediaRecorder.stop();
+          });
+        },
+        function(err){
+          console.log('failure callback');
+        }
+    )
+  }
+});
+</script>
+
+<div class="container main-container">
+  <h3 class="text-center">
+    Gummy: Translate Me!
+  </h3>
+  <div class='text-center'>
+    <button type='button' data-toggle='modal' data-target='#addLanguageModal' class='btn btn-primary'>
+      <i class='fa fa-plus'></i> Add Language
+    </button>
+    <button type='button' class='btn btn-default' data-toggle='modal' data-target='#settingsModal'>
+      <i class='fa fa-cog'></i> Settings
+    </button>
+  </div>
+  <div id='unableToUnderstandAlert' class="row">
+    <div class="col-xs-4 col-xs-offset-4">
+      <div class='text-center alert alert-danger alert-dismissible'>
+        <h4>Unable to Understand!</h4>
+        <p>Try recording again with a cleaner voice</p>
+      </div>
+    </div>
+  </div>
+  <hr />
+  <div class="row">
+    <div class="col-sm-6 col-xs-12">
+      <div id='btn-group__left' class="btn-group btn-group-justified">
+        {% for locale in locales %}
+        {% if locales.index(locale) == 0 %}
+        <a class="btn btn-default active" data-lang='{{ locale.code }}'>
+          {{ locale.name }}
+        </a>
+        {% else %}
+        <a class="btn btn-default" data-lang='{{ locale.code }}'>
+          {{ locale.name }}
+        </a>
+        {% endif %}
+        {% endfor %}
+      </div>
+      <br />
+      <div class="form-group">
+        <textarea class='form-control' rows='4' placeholder='Eg. Hello World' id='textTranslateToJapanese' required >{{ translated_en_text }}</textarea>
+      </div>
+      <div class="form-group text-center">
+        <button type='button' class='btn btn-default' id='translateButton' data-from='en-US' data-to='ja'>
+          <i class='fa fa-language'></i> Translate
+        </button>
+        <button type='button' class='btn btn-default' id='recordVoice' style='color: red;'><i class='fa fa-microphone'></i></button>
+        <button type='button' class='btn btn-info' id='playSynthesiserLeft'><i class='fa fa-play'></i> Play</button>
+        <a href='/' class='btn btn-danger'><i class='fa fa-undo'></i> Reset</a>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xs-12">
+      <div id='btn-group__right' class="btn-group btn-group-justified">
+        {% for locale in locales %}
+        {% if locales.index(locale) == 1 %}
+        <a class="btn btn-default active" data-lang='{{ locale.code }}'>{{ locale.name }}</a>
+        {% else %}
+        <a class="btn btn-default" data-lang='{{ locale.code }}'>{{ locale.name }}</a>
+        {% endif %}
+        {% endfor %}
+      </div>
+      <br />
+      <div class="form-group">
+        <textarea disabled class='form-control' rows='4' placeholder='Eg. こんにちは、世界。' id='textTranslateToEnglish' required >{{ translated_ja_text }}</textarea>
+      </div>
+      <div class="form-group text-center">
+        <button type='button' class='btn btn-info' id='playSynthesiserRight'><i class='fa fa-play'></i> Play</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="addLanguageModal" class='modal fade' role='dialog'>
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title text-center">Add Language</h4>
+      </div>
+      <form id='addLanguageForm'>
+        <div class="modal-body">
+          <div class="alert alert-dismissible alert-danger" id='alertInvalidLocale'>
+            <button type="button" class="close" data-dismiss="alert">&times;</button> 
+            <strong>Invalid locale code!</strong> Try checking out this link for valid locale codes.
+          </div>
+          <div class="alert alert-dismissible alert-danger" id='alertNotSupportedLocale'>
+            <button type="button" class="close" data-dismiss="alert">&times;</button> 
+            <strong>Locale code is not supported!</strong> Try checking out this link for supported locale codes.
+          </div>
+          <label for='languageName'>Language</label>
+          <input type='text' class='form-control' id='languageName' placeholder='Eg. English' required />
+          <label for='languageLocale'>Locale Code</label>
+          <input type='text' class='form-control' id='languageLocale' placeholder='Eg. en-US' required />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-danger" id='addLanguageButton'>Add Language</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<div id="settingsModal" class='modal fade' role='dialog'>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"><i class='fa fa-cog'></i> Settings</h4>
+      </div>
+      <div class="modal-body">
+        <table class='table table-striped'>
+          <thead>
+            <tr>
+              <th>Language</th>
+              <th>Code</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for locale in locales %}
+            <tr class='edit-mode edit-mode-lang-{{ locale.code }}'>
+              <td><input type='text' class='form-control input-sm input__locale-name' value='{{ locale.name }}' /></td>  
+              <td><input type='text' class='form-control input-sm input__locale-code' value='{{ locale.code }}' /></td>  
+              <td>
+                <button type='button' class='btn btn-success btn-sm btn-edit__save' data-lang='{{ locale.code }}'>
+                  <i class='fa fa-check'></i> Save
+                </button>
+                <button type='button' class='btn btn-default btn-sm btn-edit__cancel' data-lang='{{ locale.code }}'>
+                  <i class='fa fa-times'></i> Cancel
+                </button>
+              </td>
+            </tr>
+            <tr class='show-mode show-mode-lang-{{ locale.code }}'>
+              <td>{{ locale.name }}</td>
+              <td>{{ locale.code }}</td>
+              <td>
+                <button data-lang='{{ locale.code }}' class='btn btn-warning btn-sm btn-edit-language'>
+                  <i class='fa fa-pencil'></i> Edit
+                </button>
+                <button data-lang='{{ locale.code }}' class='btn btn-danger btn-sm btn-remove-language'>
+                  <i class='fa fa-trash'></i> Remove
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% if translated_text %}
+{{ translated_text }}
+{% endif %}
+</div>
+{% endblock %}
