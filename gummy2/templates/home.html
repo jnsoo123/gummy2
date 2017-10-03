@@ -1,6 +1,7 @@
 {% extends 'layout.html' %}
 {% block body %}
 
+{% block javascript %}
 <script type='text/javascript'>
 $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
@@ -205,6 +206,7 @@ $(function(){
   }
 });
 </script>
+{% endblock %}
 
 <div class="container main-container">
   <h3 class="text-center">
