@@ -5,7 +5,6 @@ from flask_bootstrap import Bootstrap
 from translate import Translator
 import urllib
 import speech_recognition as sr
-import soundfile as sf
 import subprocess as sp
 
 app = Flask(__name__)
