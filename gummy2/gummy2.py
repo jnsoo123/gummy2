@@ -52,7 +52,6 @@ def home():
     #db.commit()
     cur = db.execute('select name, code from locales order by id asc')
     locales = cur.fetchall()
-    print locales
     return render_template('home.html', locales=locales)
 
 @app.route('/_check_locale', methods=['GET'])
