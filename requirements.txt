@@ -28,7 +28,6 @@ goslate==1.5.1
 grpcio==1.6.3
 gTTS==1.2.2
 gTTS-token==1.1.1
--e git+https://jnsoo@bitbucket.org/jnsoo/gummy2.git@6ed23f107ec8d373ed24845fc171e897cfd35abc#egg=gummy2
 gunicorn==19.7.1
 httplib2==0.10.3
 idna==2.6
