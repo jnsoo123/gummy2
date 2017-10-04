@@ -35,7 +35,6 @@ httplib2==0.10.3
 idna==2.6
 itsdangerous==0.24
 Jinja2==2.9.6
-MacFSEvents==0.7
 MarkupSafe==1.0
 mccabe==0.6.1
 nltk==3.2.5
