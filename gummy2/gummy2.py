@@ -94,7 +94,6 @@ def edit_language():
 @app.route('/_remove_language', methods=['POST'])
 def remove_language():
     locale = request.form.get('locale')
-    print locale
 
     db = get_db()
     db.execute('delete from locales where code = ?', [locale])
