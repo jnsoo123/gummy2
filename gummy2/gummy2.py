@@ -127,7 +127,7 @@ def translate():
     except UnicodeEncodeError:
         translated_text = urllib.quote(translate.translate(text.encode('utf-8')))
 
-    return jsonify(urllib.parse.unquote(translated_text))
+    return jsonify(urllib.unquote(translated_text))
 
 @app.route('/_record_voice', methods=['POST'])
 def record_voice():
