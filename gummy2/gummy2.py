@@ -112,10 +112,10 @@ def translate():
     lang_to = request.args.get('lang_to', '', type=str)
     lang_from = request.args.get('lang_from', '', type=str)
 
-    print request.args
+    print(request.args)
     
     translate = Translator(to_lang=lang_to, from_lang=lang_from)
-    print text
+    print(text)
 
     try:
         translated_text = translate.translate(text)
@@ -159,8 +159,8 @@ def record_voice():
     except Exception:
         text = 'Unable to understand'
     finally:
-        print 'language: ' + lang
-        print 'text: ' + text
+        print('language: ' + lang)
+        print('text: ' + text)
         return jsonify(text)
 
 def remove_files():
