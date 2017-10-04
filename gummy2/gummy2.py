@@ -56,8 +56,8 @@ def home():
 
 @app.route('/_check_locale', methods=['GET'])
 def check_locale():
-    language_name = request.args.get('language_name', '', type=bytes)
-    language_locale = request.args.get('language_locale', '', type=bytes)
+    language_name = request.args.get('language_name', '', type=str)
+    language_locale = request.args.get('language_locale', '', type=str)
     translate = Translator(from_lang='en-US', to_lang=language_locale)
     try:
         translated_text = translate.translate('test')
@@ -109,8 +109,8 @@ def translate():
     remove_files()
 
     text = request.args.get('text', '', type=str)
-    lang_to = request.args.get('lang_to', '', type=bytes)
-    lang_from = request.args.get('lang_from', '', type=bytes)
+    lang_to = request.args.get('lang_to', '', type=str)
+    lang_from = request.args.get('lang_from', '', type=str)
 
     print(request.args)
     
@@ -121,7 +121,7 @@ def translate():
         translated_text = translate.translate(text)
     except KeyError:
         try:
-            translated_text = translate.translate(bytes(text))
+            translated_text = translate.translate(str(text))
         except UnicodeEncodeError:
             translated_text = urllib.quote(translate.translate(text.encode('utf-8')))
     except UnicodeEncodeError:
@@ -155,7 +155,7 @@ def record_voice():
         with sr.AudioFile('speech.wav') as source:
             audio = r.record(source)
     
-        text = r.recognize_google(audio, language=bytes(lang))
+        text = r.recognize_google(audio, language=str(lang))
     except Exception:
         text = 'Unable to understand'
     finally:
