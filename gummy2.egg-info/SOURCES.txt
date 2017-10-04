@@ -8,7 +8,10 @@ gummy2.egg-info/SOURCES.txt
 gummy2.egg-info/dependency_links.txt
 gummy2.egg-info/requires.txt
 gummy2.egg-info/top_level.txt
+gummy2/static/.DS_Store
 gummy2/static/bootflat.min.css
+gummy2/static/speech_left.mp3
+gummy2/static/speech_right.mp3
 gummy2/static/style.css
 gummy2/templates/home.html
 gummy2/templates/layout.html

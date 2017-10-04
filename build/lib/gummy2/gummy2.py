@@ -5,7 +5,6 @@ from flask_bootstrap import Bootstrap
 from translate import Translator
 import urllib
 import speech_recognition as sr
-import soundfile as sf
 import subprocess as sp
 
 app = Flask(__name__)
@@ -72,7 +71,11 @@ def check_locale():
         db = get_db()
         db.execute('insert into locales (name, code) values (?, ?)', [language_name, language_locale])
         db.commit()
-        return jsonify('valid')
+
+        cur = db.execute('select name, code from locales order by id asc')
+        locales = cur.fetchall()
+
+        return jsonify({ 'data': render_template('home.html', locales=locales) })
 
 @app.route('/_edit_language', methods=['POST'])
 def edit_language():
@@ -89,6 +92,19 @@ def edit_language():
 
     return jsonify({ 'data': render_template('home.html', locales=locales) })
 
+@app.route('/_remove_language', methods=['POST'])
+def remove_language():
+    locale = request.form.get('locale')
+    print locale
+
+    db = get_db()
+    db.execute('delete from locales where code = ?', [locale])
+    db.commit()
+
+    cur = db.execute('select name, code from locales order by id asc')
+    locales = cur.fetchall()
+
+    return jsonify({ 'data': render_template('home.html', locales=locales) })
 
 @app.route('/_translate', methods=['GET'])
 def translate():
@@ -154,3 +170,6 @@ def remove_files():
     for f in array_files:
         if os.path.exists(f):
             os.remove(f)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=8000)

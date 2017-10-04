@@ -1,6 +1,7 @@
 {% extends 'layout.html' %}
 {% block body %}
 
+{% block javascript %}
 <script type='text/javascript'>
 $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 
@@ -48,6 +49,30 @@ $(function(){
   });
 
   // == END EDIT EVENTS == 
+
+  // == REMOVE EVENTS ==
+ 
+  $('.btn-remove-language').on('click', function() {
+    let btn = $(this)
+    let langCode = btn.attr('data-lang');
+    if(confirm('Are you sure you want to remove this language')){
+      $.ajax({
+        url: $SCRIPT_ROOT + '/_remove_language',
+        data: {
+          locale: langCode,
+        },
+        method: 'POST',
+      }).done(function(response){
+        $('body').html(response.data);
+        $('#addLanguageModal').modal('hide');
+        $('#settingsModal').modal('hide');
+        $('#alertInvalidLocale').hide();
+        $('#alertNotSupportedLocale').hide();
+      });
+    }
+  });
+
+  // == END REMOVE EVENTS ==
 
   // == SPEECH SYNTHESISER ==
 
@@ -120,17 +145,19 @@ $(function(){
             $.getJSON($SCRIPT_ROOT + '/_check_locale', {
               language_name: languageName,
               language_locale: languageLocale 
-            }, function(data){
+            }, function(response){
               addButton.text('Add Language').attr('disabled', false);
-              if (data == 'invalid') {
+              if (response == 'invalid') {
                 $('#alertInvalidLocale').show();
-              } else if (data == 'not supported') {
+              } else if (response == 'not supported') {
                 $('#alertNotSupportedLocale').show();
               } else {
+                $('body').html(response.data);
                 $('#addLanguageModal').modal('hide');
+                $('#settingsModal').modal('hide');
                 $('#alertInvalidLocale').hide();
                 $('#alertNotSupportedLocale').hide();
-                addLanguage(languageName, languageLocale);
+                // addLanguage(languageName, languageLocale);
               }
             });
           });
@@ -199,12 +226,14 @@ $(function(){
           });
         },
         function(err){
+          console.log(err)
           console.log('failure callback');
         }
     )
   }
 });
 </script>
+{% endblock %}
 
 <div class="container main-container">
   <h3 class="text-center">
