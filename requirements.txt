@@ -65,8 +65,6 @@ requests==2.18.4
 requests-toolbelt==0.8.0
 rq==0.8.2
 rsa==3.4.2
-ruamel.ordereddict==0.4.13
-ruamel.yaml==0.15.34
 shutilwhich==1.1.0
 six==1.11.0
 sniffer==0.4.0
