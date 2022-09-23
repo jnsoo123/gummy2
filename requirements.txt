@@ -46,7 +46,7 @@ pew==0.1.27
 pipenv==8.2.6
 ply==3.10
 proto-google-cloud-speech-v1beta1==0.15.3
-protobuf==3.4.0
+protobuf==3.18.3
 pyasn1==0.3.6
 pyasn1-modules==0.1.4
 PyAudio==0.2.11
